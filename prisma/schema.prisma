@@ -1,0 +1,117 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Get a free hosted Postgres database in seconds: `npx create-db`
+
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Role {
+  CUSTOMER
+  DRIVER
+  ADMIN
+}
+
+model User {
+  id        String   @id @default(uuid())
+  firstName      String
+  lastName      String
+  email     String   @unique
+  phone     String @unique
+  passwordHash  String
+  role      Role     @default(CUSTOMER)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  driverProfile DriverProfile?
+  vehicles  CustomerVehicle[]
+  customerRequests DriverRequest[]
+  assignedRequests DriverRequest[] @relation("DriverRequests")
+}
+
+model DriverProfile {
+  id        String   @id @default(uuid())
+  userId    String   @unique
+  licenseNumber String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  user      User     @relation(fields: [userId], references: [id])
+  
+}
+
+model CustomerVehicle {
+  id        String   @id @default(uuid())
+  customerId    String
+  make      String
+  model     String
+  year      Int?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  customer      User     @relation(fields: [customerId], references: [id])
+  requests      DriverRequest[]
+}
+
+enum RequestStatus {
+  PENDING
+  ACCEPTED
+  DRIVER_ARRIVING
+  STARTED
+  COMPLETED
+  CANCELLED
+}
+model DriverRequest {
+  id                 String        @id @default(uuid())
+  customerId         String
+  vehicleId          String
+  assignedDriverId   String?
+  pickupAddress      String
+  pickupLatitude     Decimal
+  pickupLongitude    Decimal
+  destinationAddress String
+  destinationLatitude  Decimal
+  destinationLongitude Decimal
+  status             RequestStatus @default(PENDING)
+  requestedAt        DateTime      @default(now())
+  acceptedAt         DateTime?
+  startedAt          DateTime?
+  completedAt        DateTime?
+  cancelledAt        DateTime?
+
+  customer User            @relation(fields: [customerId], references: [id])
+  vehicle  CustomerVehicle @relation(fields: [vehicleId], references: [id])
+  assignedDriver User? @relation("DriverRequests", fields: [assignedDriverId], references: [id])
+  payment Payment?
+}
+
+enum PaymentMethod {
+  CASH
+  MOMO
+  CARD
+}
+enum PaymentStatus {
+  PENDING
+  COMPLETED
+  FAILED
+  REFUNDED
+}
+model Payment {
+  id                   String        @id @default(uuid())
+  requestId            String        @unique
+  amount               Decimal
+  paymentMethod        PaymentMethod
+  status               PaymentStatus @default(PENDING)
+  transactionReference String?       @unique
+  paidAt               DateTime?
+  createdAt             DateTime      @default(now())
+  updatedAt             DateTime      @updatedAt
+
+  request DriverRequest @relation(fields: [requestId], references: [id])
+}
