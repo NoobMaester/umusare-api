@@ -1,5 +1,7 @@
 import bcrypt from "bcrypt";
+import jwt from "jsonwebtoken"
 import { prisma } from "../../lib/prisma";
+import { Role } from "../../../generated/prisma/enums";
 
 interface RegisterData {
   firstName: string;
@@ -9,6 +11,21 @@ interface RegisterData {
   password: string;
 }
 
+interface LoginData {
+  email: string;
+  password: string;
+}
+
+function getJwtSecret () {
+  const secret = process.env.JWT_SECRET;
+
+  if (!secret) {
+    throw new Error("jwt_secret aint configured");
+  }
+  return secret
+}
+
+//register
 export async function registerUser(data: RegisterData) {
   const firstName = data.firstName?.trim();
   const lastName = data.lastName?.trim();
@@ -57,4 +74,57 @@ export async function registerUser(data: RegisterData) {
   });
 
   return user;
+}
+
+//login
+export async function loginUser(data: LoginData) {
+  const email = data.email?.trim().toLocaleLowerCase();
+  const password = data.password;
+
+  if (!email || !password) {
+    throw new Error("email and password are required");
+  }
+
+  const user = await prisma.user.findUnique({
+    where: {
+      email,
+    }
+  });
+
+  if(!user){
+    throw new Error("Invalid email or password");
+  }
+
+  const passwordMatches = await bcrypt.compare(
+    password, user.passwordHash
+  );
+
+  if (!passwordMatches){
+    throw new Error("Invalid email or password");
+  }
+
+  const token = jwt.sign(
+    {
+      sub: user.id,
+      role: user.role,
+    },
+    getJwtSecret(),
+    {
+      expiresIn: "7d",
+    }
+  );
+
+  return {
+    token,
+    user: {
+      id: user.id,
+      firstname: user.firstName,
+      lastname: user.lastName,
+      email: user.email,
+      phone: user.phone,
+      role: user.role,
+      createdAt: user.createdAt,
+      updatedAt: user.updatedAt,
+    },
+  };
 }
