@@ -11,8 +11,9 @@ export async function register(req: Request, res: Response) {
              message: "User registered successfully",
              user,
          });
-     } catch (error) {
+     } catch (error) { 
          console.error(error)
+         
          res.status(400).json({ 
              message: error instanceof Error ? error.message : "Registration failed"
          });

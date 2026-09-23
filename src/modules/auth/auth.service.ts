@@ -1,36 +1,60 @@
-import {prisma} from '../../lib/prisma';
+import bcrypt from "bcrypt";
+import { prisma } from "../../lib/prisma";
 
 interface RegisterData {
-    firstName: string;
-    lastName: string;
-    email: string;
-    phone: string;
-    password: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  phone: string;
+  password: string;
 }
 
 export async function registerUser(data: RegisterData) {
-    const existingUser = await prisma.user.findFirst({
-        where: {
-            OR: [
-                { email: data.email },
-                { phone: data.phone }
-            ]
-        }
-    })
+  const firstName = data.firstName?.trim();
+  const lastName = data.lastName?.trim();
+  const email = data.email?.trim().toLowerCase();
+  const phone = data.phone?.trim();
+  const password = data.password;
 
-    if (existingUser) {
-        throw new Error('User already exists');
-    }
+  if (!firstName || !lastName || !email || !phone || !password) {
+    throw new Error("All registration fields are required");
+  }
 
-    const user = await prisma.user.create({
-        data: {
-            firstName: data.firstName,
-            lastName: data.lastName,
-            email: data.email,
-            phone: data.phone,
-            passwordHash: data.password
-        }
-    });
+  if (password.length < 8) {
+    throw new Error("Password must be at least 8 characters");
+  }
 
-    return user;
+  const existingUser = await prisma.user.findFirst({
+    where: {
+      OR: [{ email }, { phone }],
+    },
+  });
+
+  if (existingUser) {
+    throw new Error("User already exists");
+  }
+
+  const passwordHash = await bcrypt.hash(password, 12);
+
+  const user = await prisma.user.create({
+    data: {
+      firstName,
+      lastName,
+      email,
+      phone,
+      passwordHash,
+    },
+    select: {
+      id: true,
+      firstName: true,
+      lastName: true,
+      email: true,
+      phone: true,
+      role: true,
+      createdAt: true,
+      updatedAt: true,
+    },
+  });
+
+  return user;
 }
