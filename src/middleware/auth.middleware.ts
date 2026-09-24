@@ -29,19 +29,11 @@ export function requireAuth(
   next: NextFunction
 ) {
   try {
-    const authorization = req.headers.authorization;
+    const token = req.cookies?.umusaare_token;
 
-    if (!authorization) {
+    if (!token) {
       return res.status(401).json({
         message: "Authentication required",
-      });
-    }
-
-    const [scheme, token] = authorization.split(" ");
-
-    if (scheme !== "Bearer" || !token) {
-      return res.status(401).json({
-        message: "Invalid authorization header",
       });
     }
 

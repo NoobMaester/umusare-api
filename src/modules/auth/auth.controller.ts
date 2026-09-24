@@ -27,9 +27,16 @@ export async function login(req: Request, res: Response){
     try{
         const {token, user} = await loginUser(req.body);
 
-        res.status(200).json({
+        res
+        .cookie("umusaare_token", token, {
+          httpOnly: true,
+          secure: process.env.NODE_ENV === "production",
+          sameSite: "lax",
+          maxAge: 7 * 24 * 60 * 60 * 1000,
+        })
+        .status(200)
+        .json({
             message: "Login successful",
-            token,
             user,
         });
     } catch(error){
@@ -91,4 +98,18 @@ export async function getMe(
       message: "Failed to retrieve user",
     });
   }
+}
+
+//logout
+export async function logout(req: Request, res: Response) {
+  res
+    .clearCookie("umusaare_token", {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+    })
+    .status(200)
+    .json({
+      message: "Logout successful",
+    });
 }
