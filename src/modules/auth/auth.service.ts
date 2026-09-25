@@ -1,7 +1,7 @@
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken"
 import { prisma } from "../../lib/prisma";
-import { Role } from "../../../generated/prisma/enums";
+
 
 interface RegisterData {
   firstName: string;
@@ -75,24 +75,24 @@ export async function registerUser(data: RegisterData) {
 
   const token = jwt.sign(
     {
-      sub:user.id,
+      sub: user.id,
       role: user.role,
     },
     getJwtSecret(),
     {
-      expiresIn: "7d",
+      expiresIn: "7d"
     }
   );
 
   return {
     token,
-    user
+    user,
   };
 }
 
 //login
 export async function loginUser(data: LoginData) {
-  const email = data.email?.trim().toLocaleLowerCase();
+  const email = data.email?.trim().toLowerCase();
   const password = data.password;
 
   if (!email || !password) {
@@ -132,8 +132,8 @@ export async function loginUser(data: LoginData) {
     token,
     user: {
       id: user.id,
-      firstname: user.firstName,
-      lastname: user.lastName,
+      firstName: user.firstName,
+      lastName: user.lastName,
       email: user.email,
       phone: user.phone,
       role: user.role,

@@ -3,6 +3,14 @@ import { loginUser, registerUser } from './auth.service';
 import {prisma} from "../../lib/prisma"
 
 
+const authCookieOptions = {
+  httpOnly: true,
+  secure: process.env.NODE_ENV === "production",
+  sameSite: "lax" as const,
+  maxAge: 7 * 24 * 60 * 60 * 1000,
+};
+
+
 //register
 export async function register(req: Request, res: Response) {
 
@@ -10,12 +18,7 @@ export async function register(req: Request, res: Response) {
          const {token, user} = await registerUser(req.body);
         
          res
-         .cookie("umusaare_token", token, {
-          httpOnly: true,
-          secure: process.env.NODE_ENV === "production",
-          sameSite: "lax",
-          maxAge: 7 * 24 * 60 * 60 * 1000,
-         })
+         .cookie("umusaare_token", token, authCookieOptions)
          .status(201).json({
              message: "User registered successfully",
              user,
@@ -35,12 +38,7 @@ export async function login(req: Request, res: Response){
         const {token, user} = await loginUser(req.body);
 
         res
-        .cookie("umusaare_token", token, {
-          httpOnly: true,
-          secure: process.env.NODE_ENV === "production",
-          sameSite: "lax",
-          maxAge: 7 * 24 * 60 * 60 * 1000,
-        })
+        .cookie("umusaare_token", token, authCookieOptions)
         .status(200)
         .json({
             message: "Login successful",
