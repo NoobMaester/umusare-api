@@ -7,9 +7,16 @@ import {prisma} from "../../lib/prisma"
 export async function register(req: Request, res: Response) {
 
     try {
-         const user = await registerUser(req.body);
+         const {token, user} = await registerUser(req.body);
         
-         res.status(201).json({
+         res
+         .cookie("umusaare_token", token, {
+          httpOnly: true,
+          secure: process.env.NODE_ENV === "production",
+          sameSite: "lax",
+          maxAge: 7 * 24 * 60 * 60 * 1000,
+         })
+         .status(201).json({
              message: "User registered successfully",
              user,
          });

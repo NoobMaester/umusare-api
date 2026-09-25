@@ -73,7 +73,21 @@ export async function registerUser(data: RegisterData) {
     },
   });
 
-  return user;
+  const token = jwt.sign(
+    {
+      sub:user.id,
+      role: user.role,
+    },
+    getJwtSecret(),
+    {
+      expiresIn: "7d",
+    }
+  );
+
+  return {
+    token,
+    user
+  };
 }
 
 //login
