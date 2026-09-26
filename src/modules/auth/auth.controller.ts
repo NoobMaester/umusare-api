@@ -1,7 +1,6 @@
-import {Request, Response} from 'express';
-import { loginUser, registerUser } from './auth.service';
-import {prisma} from "../../lib/prisma"
-
+import { Request, Response } from "express";
+import { loginUser, registerUser } from "./auth.service";
+import { prisma } from "../../lib/prisma";
 
 const authCookieOptions = {
   httpOnly: true,
@@ -10,53 +9,45 @@ const authCookieOptions = {
   maxAge: 7 * 24 * 60 * 60 * 1000,
 };
 
-
 //register
 export async function register(req: Request, res: Response) {
+  try {
+    const user = await registerUser(req.body);
 
-    try {
-         const {token, user} = await registerUser(req.body);
-        
-         res
-         .cookie("umusaare_token", token, authCookieOptions)
-         .status(201).json({
-             message: "User registered successfully",
-             user,
-         });
-     } catch (error) { 
-         console.error(error)
-         
-         res.status(400).json({ 
-             message: error instanceof Error ? error.message : "Registration failed"
-         });
-     }
+    res.status(201).json({
+      message: "User registered successfully",
+      user,
+    });
+
+  } catch (error) {
+    console.error("[AUTH REGISTER]", error);
+
+    res.status(400).json({
+      message: error instanceof Error ? error.message : "Registration failed",
+    });
+  }
 }
 
 //login
-export async function login(req: Request, res: Response){
-    try{
-        const {token, user} = await loginUser(req.body);
+export async function login(req: Request, res: Response) {
 
-        res
-        .cookie("umusaare_token", token, authCookieOptions)
-        .status(200)
-        .json({
-            message: "Login successful",
-            user,
-        });
-    } catch(error){
-        console.error(error);
+  try {
+    const { token, user } = await loginUser(req.body);
+    res.cookie("umusaare_token", token, authCookieOptions).status(200).json({
+      message: "Login successful",
+      user,
+    });
+  } catch (error) {
+    console.error("[AUTH LOGIN]", error);
 
-        res.status(401).json({
-            message: error instanceof Error ? error.message : "Login failed",
-        });
-    }
+    res.status(401).json({
+      message: error instanceof Error ? error.message : "Login failed",
+    });
+  }
 }
 
-export async function getMe(
-  req: Request,
-  res: Response
-) {
+//me
+export async function getMe(req: Request, res: Response) {
   try {
     const authenticatedRequest = req as Request & {
       user?: {
